@@ -21,11 +21,11 @@ def main():
             
             # response is (response string, returned rows)
             if response[1] != None:
-                print(response[0])
+                print('\n' + response[0])
                 for record in response[1]:
                     print('\t' + str(record))
             else:
-                print(response[0])
+                print('\n' + response[0])
             print()
     
 def menu():
@@ -66,27 +66,35 @@ def add_record(name_str=None, country_str=None, catches_int=None):
 def update_record(name_str=None, catches_int=None):
     if name_str == None:
         name_str = input('Enter record holder\'s name:  ')
-    if catches_int == None:
-        catches_int = input('Enter number of chainsaws caught:  ')
     
-    try:
-        rows_changed = Record.update(catches=catches_int).where(Record.name == name_str).execute()
-        return 'Updated record:', rows_changed
-    except IntegrityError as e:
-        print(e)
-        return 'Failed to update record', None
+    if record_exists(name_str):
+        if catches_int == None:
+            catches_int = input('Enter number of chainsaws caught:  ')
+        
+        try:
+            Record.update(catches=catches_int).where(Record.name == name_str).execute()
+            return f'Updated record for {name_str} to {catches_int}', None
+        except IntegrityError as e:
+            print(e)
+            return f'Failed to update record for {name_str}', None
+    else:
+        return f'Couldn\'t find a record for {name_str}', None
     
 
 def delete_record(name_str=None):
     if name_str == None:
         name_str = input('Enter record holder\'s name:  ')
     
-    try:
-        rows_deleted = Record.delete().where(Record.name == name_str).execute()
-        return 'Deleted record:', rows_deleted
-    except IntegrityError as e:
-        print(e)
-        return 'Failed to delete record', None
+    if record_exists(name_str):
+        try:
+            Record.delete().where(Record.name == name_str).execute()
+            return f'Deleted record for {name_str}', None
+        
+        except IntegrityError as e:
+            print(e)
+            return f'Failed to delete record for {name_str}', None
+    else:
+        return f'Couldn\'t find a record for {name_str}', None
     
 
 # returns all records where 'name' matches search_name
@@ -115,14 +123,18 @@ def select_all():
 
 # fills db with example data
 def populate_db():
-    if search(name_str='Janne Mustonen') == None:
+    if not record_exists('Janne Mustonen'):
         add_record(name_str='Janne Mustonen', country_str='Finland', catches_int=98)
-    if search(name_str='Ian Stewart') == None:
+    if not record_exists('Ian Stewart'):
         add_record(name_str='Ian Stewart', country_str='Canada', catches_int=94)
-    if search(name_str='Aaron Gregg') == None:
+    if not record_exists('Aaron Gregg'):
         add_record(name_str='Aaron Gregg', country_str='Canada', catches_int=88)
-    if search(name_str='Chad Taylor') == None:
+    if not record_exists('Chad Taylor'):
         add_record(name_str='Chad Taylor', country_str='USA', catches_int=78)
+ 
+ 
+def record_exists(name):
+    return search(name_str=name)[1] != None
 
 
 # model class for records to be stored in database
@@ -135,7 +147,7 @@ class Record(Model):
         database = db
     
     def __str__(self):
-        return f'Name: {self.name} Country: {self.country} Number of Catches: {self.catches}'
+        return f'Name: {self.name}, Country: {self.country}, Number of Catches: {self.catches}'
 
 
 if __name__ == '__main__':
