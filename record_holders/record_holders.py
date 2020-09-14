@@ -105,7 +105,7 @@ def search(name_str=None):
 
 # returns all records, sorted by number of catches
 def select_all():
-    rows_selected = Record.select().order_by(Record.catches)
+    rows_selected = Record.select().order_by(Record.catches.desc())
     
     if len(rows_selected) > 0:
         return 'All records:', rows_selected
